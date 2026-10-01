@@ -16,34 +16,38 @@ const app = new App({
 
 async function main() {
   try {
-    // Find our app installation
+    // Get the GitHub App installation
     const { data: installations } =
       await app.octokit.request("GET /app/installations");
 
     const installationId = installations[0].id;
 
-    // Authenticate as the installed app
+    // Authenticate as the installed GitHub App
     const octokit =
       await app.getInstallationOctokit(installationId);
 
-    // Get repository contents
+    // Read src/index.js from GitHub
     const { data } = await octokit.request(
       "GET /repos/{owner}/{repo}/contents/{path}",
       {
         owner: process.env.GITHUB_OWNER,
         repo: process.env.GITHUB_REPO,
-        path: "",
+        path: "src/index.js",
       }
     );
 
-    console.log("\nFiles in repository:\n");
+    // GitHub sends file content as Base64
+    const content = Buffer.from(
+      data.content,
+      "base64"
+    ).toString("utf8");
 
-    for (const file of data) {
-      console.log(`${file.type}: ${file.name}`);
-    }
+    console.log("\n===== src/index.js FROM GITHUB =====\n");
+    console.log(content);
 
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("GitHub API error:");
+    console.error(error.message);
   }
 }
 
